@@ -6,7 +6,7 @@ pub enum DerivationError {
     InvalidChecksum,
     InvalidSalt,
 }
-// USE &[U8] INSTEAD OF VECS where possible
+// USE &[U8] INSTEAD OF VECS where poasssible
 
 fn checksum(mnemonic: &str) -> Result<bool, DerivationError> {
     mnemonic_to_bytes(mnemonic);
