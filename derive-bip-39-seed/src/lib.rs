@@ -1,5 +1,5 @@
 /*!
- * Rust implementation of seed derivation from a 12-24 word BIP 39 mnemonic phrase + optional passphrase salt.
+ * Rust implementation of seed derivation from a 12-24 word BIP-39 mnemonic phrase + optional passphrase salt.
  */
 
 use unicode_normalization::UnicodeNormalization;
@@ -43,20 +43,20 @@ fn checksum((mnemonic, word_count): ([u8; 33], usize)) -> Result<(), DerivationE
 /// # Returns
 /// 
 /// A 33-byte array representing the mnemonic phrase, or `Err(DerivationError::InvalidMnemonicFormat)`
-fn mnemonic_to_bytes(mnemonic: &str) -> Result<([u8; 33], usize), DerivationError> {
+pub fn mnemonic_to_bytes(mnemonic: &str) -> Result<([u8; 33], usize), DerivationError> {
     let words: Vec<&str> = mnemonic.split(" ").collect();
     if words.len() % 3 != 0 || words.len() < 12 || words.len() > 24 { return Err(DerivationError::InvalidMnemonicFormat); }
     
-    let word_list = get_word_list()?;
-    let mut language_index = 10;
-    for lang in 0..10 {
-        if word_list[lang].binary_search(&words[0]).is_ok() {
+    let word_lists = get_word_lists();
+    let mut language_index = 9;
+    for lang in 0..9 {
+        if word_lists[lang].binary_search(&words[0]).is_ok() {
             language_index = lang;
             break;
         }
     }
 
-    if language_index == 10 {
+    if language_index == 9 {
         return Err(DerivationError::InvalidMnemonicWord);
     }
 
@@ -65,7 +65,7 @@ fn mnemonic_to_bytes(mnemonic: &str) -> Result<([u8; 33], usize), DerivationErro
     let mut byte_index: usize = 0;
 
     for word in &words {
-        match word_list[language_index].binary_search(&word) {
+        match word_lists[language_index].binary_search(&word) {
             Ok(mut index) => {
                 let mut bits_to_fill = 8 - bit_cnt % 8;
                 let mut mask = u8::MAX >> 8 - bits_to_fill;
@@ -92,8 +92,19 @@ fn mnemonic_to_bytes(mnemonic: &str) -> Result<([u8; 33], usize), DerivationErro
     Ok( (bytes, words.len()) )
 }
 
-fn get_word_list() -> Result<[[&'static str; 2048]; 10], DerivationError>{
-    Ok([[""; 2048]; 10])
+fn get_word_lists() -> [[&'static str; 2048]; 9]{
+    let mut wordlists = [[""; 2048]; 9];
+    wordlists[0] = include_str!("../wordlists/chinese_simplified.txt").trim().lines().collect::<Vec<&str>>().try_into().unwrap();
+    wordlists[1] = include_str!("../wordlists/czech.txt").trim().lines().collect::<Vec<&str>>().try_into().unwrap();
+    wordlists[2] = include_str!("../wordlists/english.txt").trim().lines().collect::<Vec<&str>>().try_into().unwrap();
+    wordlists[3] = include_str!("../wordlists/french.txt").trim().lines().collect::<Vec<&str>>().try_into().unwrap();
+    wordlists[4] = include_str!("../wordlists/italian.txt").trim().lines().collect::<Vec<&str>>().try_into().unwrap();
+    wordlists[5] = include_str!("../wordlists/japanese.txt").trim().lines().collect::<Vec<&str>>().try_into().unwrap();
+    wordlists[6] = include_str!("../wordlists/korean.txt").trim().lines().collect::<Vec<&str>>().try_into().unwrap();
+    wordlists[7] = include_str!("../wordlists/portuguese.txt").trim().lines().collect::<Vec<&str>>().try_into().unwrap();
+    wordlists[8] = include_str!("../wordlists/spanish.txt").trim().lines().collect::<Vec<&str>>().try_into().unwrap();
+
+    wordlists
 }
 
 /// Derives a 64-byte seed from a 12-24 word BIP-39 mnemonic phrase + optional passphrase salt
