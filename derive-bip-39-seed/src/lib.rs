@@ -62,17 +62,24 @@ pub fn mnemonic_to_bytes(mnemonic: &str) -> Result<([u8; 33], usize), Derivation
         return Err(DerivationError::InvalidMnemonicWord);
     }
 
+    let mut five_word_blocks = [0_u64; 3];
     let mut bytes = [0; 33];
     let mut bit_cnt = 0;
     let mut byte_index: usize = 0;
 
+    let mut bits: Vec<bool> = Vec::with_capacity(132);
+
     for word in &words {
         match word_lists[language_index].binary_search(&word) {
             Ok(mut index) => {
+                println!("{:16b}", index as u16);
                 let mut bits_to_fill = 8 - bit_cnt % 8;
                 let mut mask = u8::MAX << 8 - bits_to_fill;
+                println!("{:08b}", mask);
                 mask &= (index >> 3) as u8;
+                println!("{:08b}", mask);
                 mask >>= 8 - bits_to_fill;
+                println!("{:08b}", mask);
                 bytes[byte_index] |= mask;
 
                 bit_cnt += 11;
@@ -81,9 +88,10 @@ pub fn mnemonic_to_bytes(mnemonic: &str) -> Result<([u8; 33], usize), Derivation
                 if bits_to_fill < 3 {
                     bytes[byte_index] = (index >> 3 - bits_to_fill) as u8;
                     byte_index += 1;
-                    index <<= 5 + bits_to_fill;
+                    bits_to_fill += 8;
                 }
 
+                index <<= bits_to_fill - 3;
                 bytes[byte_index] = index as u8;
                 if bit_cnt == 88 { byte_index += 1; }
                 println!("{}, {}, {}", bit_cnt, byte_index, bytes[byte_index]);
