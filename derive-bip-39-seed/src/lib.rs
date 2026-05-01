@@ -4,6 +4,7 @@
 
 use unicode_normalization::UnicodeNormalization;
 use std::io;
+use sha2::{Sha256, Digest};
 
 #[derive(Debug)]
 pub enum DerivationError {
@@ -31,6 +32,16 @@ impl From<io::Error> for DerivationError {
 /// `Ok(())` if the checksum is valid, otherwise `Err(DerivationError::InvalidMnemonicChecksum)`
 ///
 fn checksum((mnemonic, word_count): ([u8; 33], usize)) -> Result<(), DerivationError> {
+    if word_count == 12 {
+        let entropy_bytes = word_count + word_count/3;
+        
+        let mut hasher = Sha256::new();
+        hasher.update(&mnemonic[0..entropy_bytes]);
+        let result = hasher.finalize();
+        
+        let mask = u8::MAX >> (8 - word_count/3);
+        if result[0] & mask != mnemonic[entropy_bytes] & mask {return Err(DerivationError::InvalidMnemonicChecksum)}
+    }
     Ok(())
 }
 
@@ -72,14 +83,14 @@ pub fn mnemonic_to_bytes(mnemonic: &str) -> Result<([u8; 33], usize), Derivation
     for word in &words {
         match word_lists[language_index].binary_search(&word) {
             Ok(mut index) => {
-                println!("{:16b}", index as u16);
+                //println!("{:16b}", index as u16);
                 let mut bits_to_fill = 8 - bit_cnt % 8;
                 let mut mask = u8::MAX << 8 - bits_to_fill;
-                println!("{:08b}", mask);
+                //println!("{:08b}", mask);
                 mask &= (index >> 3) as u8;
-                println!("{:08b}", mask);
+                //println!("{:08b}", mask);
                 mask >>= 8 - bits_to_fill;
-                println!("{:08b}", mask);
+                //println!("{:08b}", mask);
                 bytes[byte_index] |= mask;
 
                 bit_cnt += 11;
@@ -94,10 +105,14 @@ pub fn mnemonic_to_bytes(mnemonic: &str) -> Result<([u8; 33], usize), Derivation
                 index <<= bits_to_fill - 3;
                 bytes[byte_index] = index as u8;
                 if bit_cnt == 88 { byte_index += 1; }
-                println!("{}, {}, {}", bit_cnt, byte_index, bytes[byte_index]);
+                //println!("{}, {}, {}", bit_cnt, byte_index, bytes[byte_index]);
             },
             Err(_) => return Err(DerivationError::InvalidMnemonicWord)
         }
+    }
+    println!("{:?}", bytes);
+    for word in bytes {
+        print!("{:08b} ", word);
     }
 
     Ok( (bytes, words.len()) )
