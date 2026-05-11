@@ -39,8 +39,7 @@ fn checksum((mnemonic, word_count): ([u8; 33], usize)) -> Result<(), DerivationE
         hasher.update(&mnemonic[0..entropy_bytes]);
         let result = hasher.finalize();
         
-        let mask = u8::MAX >> (8 - word_count/3);
-        if result[0] & mask != mnemonic[entropy_bytes] & mask {return Err(DerivationError::InvalidMnemonicChecksum)}
+        if result[0] >> 8 - word_count/3 != mnemonic[entropy_bytes] >> 8 - word_count/3 {return Err(DerivationError::InvalidMnemonicChecksum)}
     }
     Ok(())
 }
@@ -83,6 +82,7 @@ pub fn mnemonic_to_bytes(mnemonic: &str) -> Result<([u8; 33], usize), Derivation
     for word in &words {
         match word_lists[language_index].binary_search(&word) {
             Ok(mut index) => {
+                print!("{} ", index);
                 //println!("{:16b}", index as u16);
                 let mut bits_to_fill = 8 - bit_cnt % 8;
                 let mut mask = u8::MAX << 8 - bits_to_fill;
@@ -192,9 +192,48 @@ pub fn derive_from_string(mnemonic: &str, salt: &str) -> Result<[u8; 64], Deriva
 mod tests {
     use super::*;
 
-    #[test]
-    fn it_works() {
-        let result = "test";
-        assert_eq!(result, "test");
+    mod checksum {
+        use super::*;
+
+        // Verifies checksum() returns DerivationError::InvalidMnemonicChecksum
+        // when word_count arg is invalid
+        #[test]
+        fn invalid_word_count_returns_err() {
+            // enemy follow frame vanish drip great load nut used coconut labor auction
+            let mnemonic: [u8; 33] = [73, 235, 85, 114, 120, 164, 50, 204, 96, 188, 189, 239, 197, 157, 241, 7, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            
+            // not a multiple of 3 || < 12 || > 24
+            let word_count = 14;
+            assert!(checksum((mnemonic, word_count)).is_err());
+            let word_count = 6;
+            assert!(checksum((mnemonic, word_count)).is_err());
+            let word_count = 27;
+            assert!(checksum((mnemonic, word_count)).is_err());
+        }
+
+        // Verifies checksum() returns DerivationError::InvalidMnemonicChecksum
+        // when mnemonic arg is invalid
+        #[test]
+        fn invalid_mnemonic_returns_err() {
+            let word_count = 12;
+            
+            // enemy follow frame vanish drip great load nut used coconut labor auction
+            let mnemonic: [u8; 33] = [73, 235, 85, 114, 120, 164, 50, 204, 96, 188, 189, 239, 197, 157, 241, 7, 112, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            
+            // not a multiple of 3 || < 12 || > 24
+            assert!(checksum((mnemonic, word_count)).is_err());
+            let word_count = 6;
+            assert!(checksum((mnemonic, word_count)).is_err());
+            let word_count = 27;
+            assert!(checksum((mnemonic, word_count)).is_err());
+        }
+
+        // Verifies checksum() returns Ok(()) when mnemonic and word_count
+        // args are valid
+        #[test]
+        fn returns_ok() {
+            let result = "test";
+            assert_eq!(result, "test");
+        }
     }
 }

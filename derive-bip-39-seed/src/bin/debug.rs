@@ -7,9 +7,9 @@ fn main() -> Result<(), DerivationError> {
     println!("{:?}", mnemonic_to_bytes("labor great follow frame drip auction vanish nut load enemy used coconut"));
     println!("{:?}", mnemonic_to_bytes("tube tired cage message bar language sock trap speak lonely uncover brief"));
     println!("labor great follow frame drip auction vanish nut load enemy used coconut");
-    println!("{:?}", derive_from_string("labor great follow frame drip auction vanish nut load enemy used coconut", "")?);
+    println!("{:?}", derive_from_string("labor great follow frame drip auction vanish nut load enemy used coconut", ""));
     println!("tube tired cage message bar language sock trap speak lonely uncover brief");
-    println!("{:?}", derive_from_string("tube tired cage message bar language sock trap speak lonely uncover brief", "")?);
+    println!("{:?}", derive_from_string("tube tired cage message bar language sock trap speak lonely uncover brief", ""));
     println!("labor great follow frame drip auction vanish nut load enemy coconut used");
     println!("{:?}", derive_from_string("labor great follow frame drip auction vanish nut load enemy coconut used", ""));
     println!("tube tired cage message bar language sock trap speak lonely brief uncover");
@@ -43,8 +43,11 @@ fn main() -> Result<(), DerivationError> {
 
 // False Positives
 // enemy load follow coconut drip frame great labor vanish auction nut used
+// 01001001111 10000010111 01011010101 00101100111 01000011001 01011100100
+// 01100110001 01111100010 11110001010 00001110111 10010111101 11101111110
 // great auction drip enemy load follow coconut vanish used frame labor nut
-
+// 01100111010 00001111000 01000100000 01001010110 10000100000 01011011101
+// 00101101110 11110010111 11110001011 01011101100 01111101011 10011000110
 
 // False Negatives
 // enemy follow frame vanish drip great load nut used coconut labor auction
